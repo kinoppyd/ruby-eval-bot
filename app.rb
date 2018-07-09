@@ -1,0 +1,46 @@
+require 'mobb'
+require 'cgi'
+
+set :service, 'slack'
+
+module Sandbox
+  [File, Dir, IO, FileTest].each do |klass|
+    refine klass.singleton_class do
+      def banned_method(*_); raise SecurityError.new; end
+      klass.methods.each do |m|
+        alias_method(m, :banned_method)
+      end
+    end
+  end
+
+  refine Object do
+    def banned_method(*_); raise SecurityError.new; end
+    allowed = [:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :block_given?, :iterator?, :catch, :raise, :gsub, :lambda, :proc, :rand]
+    Kernel.methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
+      alias_method(m, :banned_method)
+    end
+  end
+end
+
+on /^ruby:\s+(.+)$/ do |code|
+  code = CGI.unescapeHTML(code)
+
+  def tainted(code)
+    <<"CLEANROOM"
+    module CleanRoom
+      using Sandbox
+      #{code}
+    end
+CLEANROOM
+  end
+
+  res = begin
+    eval(tainted(code))
+  rescue SecurityError, SyntaxError => e
+    e.message
+  rescue Error => e
+    e.message
+  end
+
+  res.to_s
+end

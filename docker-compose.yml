@@ -1,0 +1,9 @@
+version: '2'
+services:
+  ruby-eval-bot:
+    build:
+      context: .
+    restart: always
+    environment:
+      LANG: ja_JP.UTF-8
+      SLACK_TOKEN: ${SLACK_TOKEN}
