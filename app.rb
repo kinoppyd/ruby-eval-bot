@@ -4,7 +4,7 @@ require 'cgi'
 set :service, 'slack'
 
 module Sandbox
-  [File, Dir, IO, FileTest, RubyVM, RubyVM::InstructionSequence].each do |klass|
+  [File, Dir, IO, Process, FileTest, RubyVM, RubyVM::InstructionSequence].each do |klass|
     refine klass.singleton_class do
       def banned_method(*_); raise SecurityError.new; end
       klass.methods.each do |m|
