@@ -15,6 +15,14 @@ module Sandbox
 
   refine Object do
     def banned_method(*_); raise SecurityError.new; end
+    allowed = [:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :block_given?, :iterator?, :catch, :raise, :gsub, :lambda, :proc, :rand, :methods]
+    Kernel.methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
+      alias_method(m, :banned_method)
+    end
+  end
+
+  refine Kernel.singleton_class do
+    def banned_method(*_); raise SecurityError.new; end
     allowed = [:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :block_given?, :iterator?, :catch, :raise, :gsub, :lambda, :proc, :rand]
     Kernel.methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
       alias_method(m, :banned_method)
