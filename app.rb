@@ -31,6 +31,8 @@ on /^ruby:\s+(.+)$/ do |code|
     return e.message
   end
 
+  return "Invalid Access" if code.include?("ENV")
+
   def tainted(code)
     <<"CLEANROOM"
     module CleanRoom
