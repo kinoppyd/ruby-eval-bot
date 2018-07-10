@@ -25,6 +25,12 @@ end
 on /^ruby:\s+(.+)$/ do |code|
   code = CGI.unescapeHTML(code)
 
+  begin
+    RubyVM::InstructionSequence.compile(code)
+  rescue SyntaxError => e
+    return e.message
+  end
+
   def tainted(code)
     <<"CLEANROOM"
     module CleanRoom
