@@ -50,12 +50,20 @@ on /^ruby:\s+(.+)$/ do |code|
     return e.message
   end
 
-  return "Invalid Access" if code.include?("ENV")
 
   def tainted(code)
     <<"CLEANROOM"
     module CleanRoom
       using Sandbox
+      TOPLEVEL_BINDING = self
+      ENV = {}
+      RUBY_DESCRIPTION = "sandbox"
+      RUBY_ENGINE = "sandbox"
+      RUBY_PATCHLEVEL = nil
+      RUBY_PLATFORM = "sandbox"
+      RUBY_RELEASE_DATE = "sandbox"
+      RUBY_REVISION = nil
+      RUBY_VERSION = "sandbox"
       #{code}
     end
 CLEANROOM
