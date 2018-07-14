@@ -4,6 +4,8 @@ require 'cgi'
 set :service, 'slack'
 
 module Sandbox
+  self_module = self
+
   [File, Dir, IO, Process, FileTest, RubyVM, RubyVM::InstructionSequence].each do |klass|
     refine klass.singleton_class do
       def banned_method(*_); raise SecurityError.new; end
@@ -15,8 +17,16 @@ module Sandbox
 
   refine Object do
     def banned_method(*_); raise SecurityError.new; end
-    allowed = [:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :block_given?, :iterator?, :catch, :raise, :gsub, :lambda, :proc, :rand, :methods]
+    allowed = [:Array, :Complex, :Float, :Hash, :Integer, :Rational, :String, :block_given?, :iterator?, :catch, :raise, :gsub, :lambda, :proc, :rand, :methods, :private_methods]
     Kernel.methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
+      alias_method(m, :banned_method)
+    end
+  end
+
+  refine Module do
+    def banned_method(*_); raise SecurityError.new; end
+    allowed = [:alias_method, :methods]
+    self_module.private_methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
       alias_method(m, :banned_method)
     end
   end
@@ -52,9 +62,7 @@ CLEANROOM
 
   res = begin
     eval(tainted(code))
-  rescue SecurityError, SyntaxError => e
-    e.message
-  rescue Error => e
+  rescue SecurityError, SyntaxError, SystemStackError, StandardError => e
     e.message
   end
 
