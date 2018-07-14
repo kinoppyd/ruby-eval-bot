@@ -25,8 +25,9 @@ module Sandbox
 
   refine Module do
     def banned_method(*_); raise SecurityError.new; end
-    allowed = [:alias_method, :methods]
-    self_module.private_methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
+    allowed = [:alias_method, :methods, :private_methods]
+    methods = Module.methods + self_module.private_methods
+    methods.reject { |name| allowed.include?(name.to_sym) }.each do |m|
       alias_method(m, :banned_method)
     end
   end
